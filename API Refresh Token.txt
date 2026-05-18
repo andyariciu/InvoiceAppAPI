@@ -11,12 +11,9 @@ public class RefreshToken
 
 public async Task<IActionResult> Login(LoginRequest request)
 {
-    // verifici user + parola
-
     var accessToken = GenerateJwtToken(user);
     var refreshToken = GenerateRefreshToken();
 
-    // salvezi refresh token în DB
     _context.RefreshTokens.Add(new RefreshToken
     {
         Token = refreshToken,
@@ -62,8 +59,6 @@ public async Task<IActionResult> Refresh(TokenRequest request)
     });
 }
 
-
-// invalidezi token-ul vechi
 storedToken.IsRevoked = true;
 
 // creezi unul nou
@@ -80,11 +75,10 @@ await _context.SaveChangesAsync();
 
 
 
-Din cookies ->
 Response.Cookies.Append("refreshToken", refreshToken, new CookieOptions
 {
-    HttpOnly = true,     // 🔒 nu e accesibil din JS
-    Secure = true,       // doar HTTPS
+    HttpOnly = true,     //not accessible from JS
+    Secure = true,       //only HTTPS
     SameSite = SameSiteMode.Strict,
     Expires = DateTime.UtcNow.AddDays(7)
 });
