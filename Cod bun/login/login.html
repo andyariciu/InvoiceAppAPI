@@ -1,0 +1,14 @@
+<div class="login-container">
+  <h2>Autentificare Facturare</h2>
+  <form (ngSubmit)="onLogin()">
+    <div>
+      <label>Utilizator:</label>
+      <input type="text" [(ngModel)]="loginData.username" name="username" required>
+    </div>
+    <div>
+      <label>Parolă:</label>
+      <input type="password" [(ngModel)]="loginData.password" name="password" required>
+    </div>
+    <button type="submit">Intră în cont</button>
+  </form>
+</div>

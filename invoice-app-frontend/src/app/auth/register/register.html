@@ -1,0 +1,90 @@
+<div class="min-h-screen flex items-center justify-center bg-gray-100">
+
+  <div class="bg-white p-8 rounded-2xl shadow-xl w-full max-w-md">
+
+    <h1 class="text-3xl font-bold mb-6 text-center">
+      Register
+    </h1>
+
+    <form
+      [formGroup]="registerForm"
+      (ngSubmit)="onSubmit()"
+      class="space-y-4"
+    >
+
+      <div>
+        <label class="block mb-1 font-medium">
+          Username
+        </label>
+
+        <input
+          type="text"
+          formControlName="username"
+          class="w-full border rounded-lg p-3"
+          [class.border-red-500]="registerForm.controls.username.invalid && registerForm.controls.username.touched"
+        />
+        @if (registerForm.controls.username.invalid &&
+            registerForm.controls.username.touched)
+        {
+            <p class ="text-red-500 text-sm mt-1">Username is required</p>
+        }
+      </div>
+
+      <div>
+        <label class="block mb-1 font-medium">
+          Password
+        </label>
+
+        <input
+          type="password"
+          formControlName="password"
+          class="w-full border rounded-lg p-3"
+          [class.border-red-500]="registerForm.controls.password.invalid && registerForm.controls.password.touched"
+        />
+        @if (registerForm.controls.password.invalid &&
+            registerForm.controls.password.touched)
+        {
+            <p class ="text-red-500 text-sm mt-1">Password is required</p>
+        }
+      </div>
+
+      <div>
+        <label class="block mb-1 font-medium">
+          Email
+        </label>
+
+        <input
+          type="email"
+          formControlName="email"
+          class="w-full border rounded-lg p-3"
+          [class.border-red-500]="registerForm.controls.email.invalid && registerForm.controls.email.touched"
+        />
+        @if (registerForm.controls.email.invalid &&
+            registerForm.controls.email.touched)
+        {
+            <p class ="text-red-500 text-sm mt-1">Email is required</p>
+        }
+      </div>
+
+      @if (errorMessage) {
+        <div class="p-3 rounded-lg text-center text-sm font-medium"
+             [class.bg-green-100]="!errorMessage.includes('error')"
+             [class.text-green-700]="!errorMessage.includes('error')"
+             [class.bg-red-100]="errorMessage.includes('error')"
+             [class.text-red-700]="errorMessage.includes('error')">
+          {{ errorMessage }}
+        </div>
+      }
+      <button type="submit"
+        class="w-full bg-black text-white p-3 rounded-lg hover:opacity-90 disabled:bg-gray-400"
+        [disabled]="registerForm.invalid"
+      >
+        Register
+      </button>
+
+
+    </form>
+
+  </div>
+
+</div>

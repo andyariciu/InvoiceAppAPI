@@ -1,0 +1,103 @@
+public class RefreshToken
+{
+    public int Id { get; set; }
+    public string Token { get; set; }
+    public DateTime Expires { get; set; }
+    public bool IsRevoked { get; set; }
+
+    public string UserId { get; set; }
+}
+
+
+public async Task<IActionResult> Login(LoginRequest request)
+{
+    // verifici user + parola
+
+    var accessToken = GenerateJwtToken(user);
+    var refreshToken = GenerateRefreshToken();
+
+    // salvezi refresh token în DB
+    _context.RefreshTokens.Add(new RefreshToken
+    {
+        Token = refreshToken,
+        Expires = DateTime.UtcNow.AddDays(7),
+        UserId = user.Id
+    });
+
+    await _context.SaveChangesAsync();
+
+    return Ok(new
+    {
+        accessToken,
+        refreshToken
+    });
+}
+
+
+private string GenerateRefreshToken()
+{
+    var randomBytes = new byte[64];
+    using var rng = RandomNumberGenerator.Create();
+    rng.GetBytes(randomBytes);
+    return Convert.ToBase64String(randomBytes);
+}
+
+
+[HttpPost("refresh")]
+public async Task<IActionResult> Refresh(TokenRequest request)
+{
+    var storedToken = await _context.RefreshTokens
+        .FirstOrDefaultAsync(x => x.Token == request.RefreshToken);
+
+    if (storedToken == null || storedToken.IsRevoked || storedToken.Expires < DateTime.UtcNow)
+        return Unauthorized();
+
+    var user = await _context.Users.FindAsync(storedToken.UserId);
+
+    var newAccessToken = GenerateJwtToken(user);
+
+    return Ok(new
+    {
+        accessToken = newAccessToken
+    });
+}
+
+
+// invalidezi token-ul vechi
+storedToken.IsRevoked = true;
+
+// creezi unul nou
+var newRefreshToken = GenerateRefreshToken();
+
+_context.RefreshTokens.Add(new RefreshToken
+{
+    Token = newRefreshToken,
+    Expires = DateTime.UtcNow.AddDays(7),
+    UserId = user.Id
+});
+
+await _context.SaveChangesAsync();
+
+
+
+Din cookies ->
+Response.Cookies.Append("refreshToken", refreshToken, new CookieOptions
+{
+    HttpOnly = true,     // 🔒 nu e accesibil din JS
+    Secure = true,       // doar HTTPS
+    SameSite = SameSiteMode.Strict,
+    Expires = DateTime.UtcNow.AddDays(7)
+});
+
+var refreshToken = Request.Cookies["refreshToken"];
+
+if (refreshToken == null)
+    return Unauthorized();
+	
+Response.Cookies.Append("refreshToken", newRefreshToken, new CookieOptions
+{
+    HttpOnly = true,
+    Secure = true,
+    SameSite = SameSiteMode.Strict,
+    Expires = DateTime.UtcNow.AddDays(7)
+});
