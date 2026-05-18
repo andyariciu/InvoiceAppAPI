@@ -1,73 +1,32 @@
-<div class="min-h-screen flex justify-center items-center bg-gray-100">
+@if (loading) {
+  <p>Loading...</p>
+}
 
-  <div class="bg-white p-8 rounded-2xl shadow-xl w-full max-w-md">
+@else if (error) {
+  <p class="text-red-500">{{ error }}</p>
+}
 
-    <h1 class="text-3xl font-bold mb-6 text-center">
-      Create Invoice
+@else {
+  <div class="p-8">
+    <h1 class="text-3xl font-bold mb-6">
+      Invoice Details
     </h1>
 
-    <form
-      [formGroup]="invoiceForm"
-      (ngSubmit)="onSubmit()"
-      class="space-y-4"
-    >
-
+    <div class="bg-white p-6 rounded-2xl shadow space-y-4">
       <div>
-        <label class="block mb-1">
-          Client Name
-        </label>
-
-        <input
-          type="text"
-          formControlName="clientName"
-          class="w-full border rounded-lg p-3"
-        />
-        @if (invoiceForm.controls.clientName.invalid &&
-            invoiceForm.controls.clientName.touched) 
-            {
-            <p class="text-red-500 text-sm mt-1">
-            Client Name is required
-            </p>
-        }
+        <span class="font-bold">Number:</span>
+        {{ invoice.number }}
       </div>
 
       <div>
-        <label class="block mb-1">
-          Total
-        </label>
-
-        <input
-          type="number"
-          formControlName="total"
-          class="w-full border rounded-lg p-3"
-          [class.border-red-500]="invoiceForm.controls.total.invalid && invoiceForm.controls.total.touched"
-        />
-        @if (invoiceForm.controls.total.errors?.['required'] &&
-            invoiceForm.controls.total.touched)
-        {
-            <p class ="text-red-500 text-sm mt-1">Total is required</p>
-        }
+        <span class="font-bold">Client:</span>
+        {{ invoice.clientName }}
       </div>
 
-      @if (message) {
-        <div class="p-3 rounded-lg text-center text-sm font-medium"
-             [class.bg-green-100]="!message.includes('error')"
-             [class.text-green-700]="!message.includes('error')"
-             [class.bg-red-100]="message.includes('error')"
-             [class.text-red-700]="message.includes('error')">
-          {{ message }}
-        </div>
-      }
-
-      <button
-        type="submit"
-        class="w-full bg-black text-white p-3 rounded-lg"
-      >
-        Create
-      </button>
-
-    </form>
-
+      <div>
+        <span class="font-bold">Total:</span>
+        {{ invoice.total }}
+      </div>
+    </div>
   </div>
-
-</div>
+}

@@ -21,6 +21,7 @@
           type="text"
           formControlName="username"
           class="w-full border rounded-lg p-3"
+          [class.opacity-50]="isLoading"
           [class.border-red-500]="loginForm.controls.username.invalid && loginForm.controls.username.touched"
         />
         @if (loginForm.controls.username.invalid &&
@@ -39,6 +40,7 @@
           type="password"
           formControlName="password"
           class="w-full border rounded-lg p-3"
+          [class.opacity-50]="isLoading"
           [class.border-red-500]="loginForm.controls.password.invalid && loginForm.controls.password.touched"
         />
         @if (loginForm.controls.password.invalid &&
@@ -55,9 +57,14 @@
       }
       <button type="submit"
         class="w-full bg-black text-white p-3 rounded-lg hover:opacity-90 disabled:bg-gray-400"
-        [disabled]="loginForm.invalid"
+        [disabled]="loginForm.invalid || isLoading"
       >
-        Login
+        @if (isLoading) {
+            Logging in...
+        } 
+        @else {
+            Login
+        }
       </button>
 
     </form>

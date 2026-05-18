@@ -10,6 +10,7 @@ import { Invoices } from '../../services/invoices';
 
 @Component({
   selector: 'app-invoice-create',
+  standalone: true,
   imports: [ReactiveFormsModule],
   templateUrl: './invoice-create.html',
   styleUrl: './invoice-create.scss',

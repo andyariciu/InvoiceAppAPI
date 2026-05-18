@@ -1,1 +1,53 @@
-<p>invoice-list works!</p>
+
+@if (loading) {
+  <div class="flex justify-center items-center min-h-screen">
+    <p class="text-xl font-semibold animate-pulse">Loading invoices...</p>
+  </div>
+}
+
+@else if (error) {
+  <div class="p-8 text-center">
+    <p class="text-red-500 font-bold">{{ error }}</p>
+  </div>
+}
+
+@else {
+  <div class="p-8 max-w-4xl mx-auto">
+    <h1 class="text-3xl font-bold mb-6">Invoices</h1>
+
+    <div class="space-y-4">
+      @for (item of invoices; track item.id) {
+        <div class="bg-white p-6 rounded-2xl shadow flex flex-row justify-between gap-4 hover:shadow-md transition-shadow">
+          <div>
+            <span class="font-bold text-gray-500">ID Factură:</span>
+            <span>#{{ item.id }}</span>
+          </div>
+
+          <div>
+            <span class="font-bold text-gray-700">Client:</span>
+            <span class="font-medium">{{ item.clientName }}</span>
+          </div>
+
+          <div>
+            <span class="font-bold text-gray-700">Total:</span>
+            <span class="text-green-600 font-semibold">{{ item.total }} RON</span>
+          </div>
+          <div class="flex items-center">
+            <a 
+              [routerLink]="['/edit', item.id]" 
+              class="bg-black text-white px-4 py-2 rounded-xl text-sm font-medium hover:opacity-80 transition-opacity text-center w-full sm:w-auto block"
+            >
+              Edit
+            </a>
+        </div>
+    </div>
+        
+      } @empty {
+        <div class="text-center p-8 bg-gray-50 rounded-2xl border border-dashed">
+          <p class="text-gray-500">No invoices have been found.</p>
+        </div>
+      }
+    </div>
+
+  </div>
+}

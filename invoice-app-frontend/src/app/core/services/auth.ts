@@ -24,4 +24,10 @@ export class Auth {
         })
       );
   }
+  refreshToken(data: any) {
+  return this.http.post<any>(
+    `${this.apiUrl}/refresh`,
+    data
+  );
+  }
 }

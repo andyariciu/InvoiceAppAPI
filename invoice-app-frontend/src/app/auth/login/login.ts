@@ -1,9 +1,6 @@
-import { Component, inject, ChangeDetectorRef } from '@angular/core';
-import {
-  FormBuilder,
-  ReactiveFormsModule,
-  Validators
-} from '@angular/forms';
+import { Component, inject } from '@angular/core';
+import { Router } from '@angular/router';
+import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 
 import { Auth } from '../../core/services/auth';
 
@@ -18,38 +15,50 @@ export class Login {
 
   private fb = inject(FormBuilder);
   private authService = inject(Auth);
-  errorMessage: string = '';
-  private cdr = inject(ChangeDetectorRef);
+  private router = inject(Router);
+
+  errorMessage: string | null = null;
+  isLoading = false;
 
   loginForm = this.fb.nonNullable.group({
-    username: ['', [Validators.required]],
-    password: ['', [Validators.required]]
+    username: ['', Validators.required],
+    password: ['', Validators.required]
   });
 
   onSubmit() {
 
-    this.errorMessage = '';
-    if (this.loginForm.invalid)
-    {
+    if (this.loginForm.invalid) {
       this.loginForm.markAllAsTouched();
       return;
     }
-    
-    this.authService
-      .login(this.loginForm.value)
+
+    this.isLoading = true;
+    this.errorMessage = null;
+
+    this.authService.login(this.loginForm.getRawValue())
       .subscribe({
-         next: response => {
+        next: response => {
+
           console.log('LOGIN SUCCESS', response);
+
+          localStorage.setItem('token', response.token);
+          localStorage.setItem('refreshToken', response.refreshToken);
+
+          this.isLoading = false;
+
+          this.router.navigate(['/invoices']);
         },
-        error: (err) => {
-          // Aici interceptăm eroarea 401
+
+        error: err => {
+
+          this.isLoading = false;
+
           if (err.status === 401) {
-            this.errorMessage = 'Unauthorised access. Please check your credentials.';
+            this.errorMessage = 'Invalid username or password';
           } else {
-            this.errorMessage = 'Unauthorised access. Please contact the administrator.';
+            this.errorMessage = 'Server error. Please try again later.';
           }
-          this.cdr.detectChanges(); 
-          
+
           console.error(err);
         }
       });
