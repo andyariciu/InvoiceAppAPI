@@ -19,27 +19,27 @@
       @for (item of invoices; track item.id) {
         <div class="bg-white p-6 rounded-2xl shadow flex flex-row justify-between gap-4 hover:shadow-md transition-shadow">
           <div>
-            <span class="font-bold text-gray-500">ID Factură:</span>
-            <span>#{{ item.id }}</span>
+            <span class="font-bold text-gray-500">Invoice: </span>
+            <span>{{ item.id }}</span>
           </div>
 
           <div>
-            <span class="font-bold text-gray-700">Client:</span>
+            <span class="font-bold text-gray-700">Client: </span>
             <span class="font-medium">{{ item.clientName }}</span>
           </div>
 
           <div>
-            <span class="font-bold text-gray-700">Total:</span>
+            <span class="font-bold text-gray-700">Total: </span>
             <span class="text-green-600 font-semibold">{{ item.total }} RON</span>
           </div>
           <div class="flex items-center">
             <a 
-              [routerLink]="['/edit', item.id]" 
+              [routerLink]="['/invoices/details', item.id]" 
               class="bg-black text-white px-4 py-2 rounded-xl text-sm font-medium hover:opacity-80 transition-opacity text-center w-full sm:w-auto block"
             >
-              Edit
+              View
             </a>
-        </div>
+          </div>
     </div>
         
       } @empty {

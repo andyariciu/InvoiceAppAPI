@@ -3,12 +3,13 @@ import { Component, inject, OnInit, ChangeDetectorRef } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
 
 import { Invoices } from '../../services/invoices';
+import { RouterLink } from '@angular/router';
 
 
 @Component({
   selector: 'app-invoice-details',
   standalone: true,
-  imports: [],
+  imports: [ RouterLink ],
   templateUrl: './invoice-details.html',
   styleUrl: './invoice-details.scss'
 })

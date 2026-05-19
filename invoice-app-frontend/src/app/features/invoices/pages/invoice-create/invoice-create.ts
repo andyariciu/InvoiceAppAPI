@@ -1,10 +1,6 @@
 import { Component, inject, ChangeDetectorRef } from '@angular/core';
 
-import {
-  FormBuilder,
-  ReactiveFormsModule,
-  Validators
-} from '@angular/forms';
+import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 
 import { Invoices } from '../../services/invoices';
 
@@ -21,6 +17,7 @@ export class InvoiceCreate {
   private invoicesService = inject(Invoices);
   private cdr = inject(ChangeDetectorRef);
   message: string = '';
+  isSuccess = false;
 
   invoiceForm = this.fb.nonNullable.group({
     clientName: ['', [Validators.required]],
@@ -42,12 +39,14 @@ export class InvoiceCreate {
         next: response => {
           console.log('INVOICE CREATED', response);
           this.message = "Invoice has been created.";
+          this.isSuccess = true;
           this.cdr.detectChanges(); 
         },
 
         error: error => {
           console.error(error);
           this.message = "An error has occurred. Invoice has not been added.";
+          this.isSuccess = false;
           this.cdr.detectChanges(); 
         }
       });

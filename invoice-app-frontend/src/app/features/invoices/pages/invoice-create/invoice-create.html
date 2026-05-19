@@ -51,10 +51,10 @@
 
       @if (message) {
         <div class="p-3 rounded-lg text-center text-sm font-medium"
-             [class.bg-green-100]="!message.includes('error')"
-             [class.text-green-700]="!message.includes('error')"
-             [class.bg-red-100]="message.includes('error')"
-             [class.text-red-700]="message.includes('error')">
+             [class.bg-green-100]="isSuccess"
+             [class.text-green-700]="isSuccess"
+             [class.bg-red-100]="!isSuccess"
+             [class.text-red-700]="!isSuccess">
           {{ message }}
         </div>
       }

@@ -1,1 +1,107 @@
-<p>invoice-edit works!</p>
+<div class="min-h-screen flex justify-center items-center bg-gray-100">
+
+  <div class="bg-white p-8 rounded-2xl shadow-xl w-full max-w-md">
+
+    <h1 class="text-3xl font-bold mb-6 text-center">
+      Create Invoice
+    </h1>
+
+    <form
+      [formGroup]="invoiceForm"
+      (ngSubmit)="onSubmit()"
+      class="space-y-4"
+    >
+
+      <!-- CLIENT NAME -->
+      <div>
+        <label class="block mb-1">
+          Client Name 
+        </label>
+
+        <input
+          type="text"
+          formControlName="clientName"
+          class="w-full border rounded-lg p-3"
+          [class.border-red-500]="invoiceForm.controls.clientName.invalid && invoiceForm.controls.clientName.touched"
+        />
+
+        @if (invoiceForm.controls.clientName.errors?.['required'] &&
+              invoiceForm.controls.clientName.touched) {
+          <p class="text-red-500 text-sm mt-1">
+            Client Name is required
+          </p>
+        }
+      </div>
+
+      <!-- TOTAL -->
+      <div>
+        <label class="block mb-1">
+          Total 
+        </label>
+
+        <input
+          type="number"
+          formControlName="total"
+          class="w-full border rounded-lg p-3"
+          [class.border-red-500]="invoiceForm.controls.total.invalid && invoiceForm.controls.total.touched"
+        />
+
+        @if (invoiceForm.controls.total.errors?.['required'] &&
+              invoiceForm.controls.total.touched) {
+          <p class="text-red-500 text-sm mt-1">
+            Total is required
+          </p>
+        }
+
+        @if (invoiceForm.controls.total.errors?.['min'] &&
+              invoiceForm.controls.total.touched) {
+          <p class="text-red-500 text-sm mt-1">
+            Total must be bigger than 0
+          </p>
+        }
+      </div>
+
+      <!-- MESSAGE -->
+      @if (message) {
+        <div class="p-3 rounded-lg text-center text-sm font-medium"
+             [class.bg-green-100]="isSuccess"
+             [class.text-green-700]="isSuccess"
+             [class.bg-red-100]="!isSuccess"
+             [class.text-red-700]="!isSuccess">
+          {{ message }}
+        </div>
+      }
+
+      <!-- BUTTON -->
+       <div class="grid grid-cols-1 gap-2 pt-2">
+        <button
+            type="submit"
+            class="bg-black text-white py-3 rounded-lg disabled:bg-gray-400 hover:opacity-80 transition-opacity text-center w-full"
+            [disabled]="invoiceForm.invalid || loading || isSuccess"
+        >
+        @if (loading) {
+          Processing...
+        } @else {
+          Update
+        }
+        </button>
+            <div class="grid grid-cols-2 gap-2">
+                <button 
+                type="button"
+                (click)="onDelete()"
+                [disabled]="loading || isSuccess"
+                class="bg-red-700 text-white py-3 rounded-lg hover:opacity-80 transition-opacity text-center w-full font-medium disabled:bg-gray-400"
+                >
+                Delete
+                </button>
+                <a 
+              [routerLink]="['/invoices']" 
+              class="bg-gray-700 text-white py-3 rounded-lg hover:opacity-80 transition-opacity text-center w-full"
+                >
+                Back
+                </a>
+            </div>
+        </div>
+    </form>
+  </div>
+</div>

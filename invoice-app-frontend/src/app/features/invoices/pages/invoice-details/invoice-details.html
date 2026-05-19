@@ -7,26 +7,41 @@
 }
 
 @else {
-  <div class="p-8">
+  <div class="p-8 max-w-4xl mx-auto">
     <h1 class="text-3xl font-bold mb-6">
       Invoice Details
     </h1>
 
-    <div class="bg-white p-6 rounded-2xl shadow space-y-4">
+    <div class="bg-white p-6 rounded-2xl shadow flex flex-row justify-between gap-4 hover:shadow-md transition-shadow">
       <div>
-        <span class="font-bold">Number:</span>
-        {{ invoice.number }}
+        <span class="font-bold text-gray-700">Number: </span>
+        <span>{{ invoice.number }}</span>
       </div>
 
       <div>
-        <span class="font-bold">Client:</span>
-        {{ invoice.clientName }}
-      </div>
+          <span class="font-bold text-gray-700">Client: </span>
+          <span class="font-medium">{{ invoice.clientName }}</span>
+        </div>
 
       <div>
-        <span class="font-bold">Total:</span>
-        {{ invoice.total }}
+        <span class="font-bold text-gray-700">Total: </span>
+        <span class="text-green-600 font-semibold">{{ invoice.total }}</span>
+      </div>
+      <div class="flex items-center gap-2">
+            <a 
+              [routerLink]="['/invoices/edit', invoice.id]" 
+              class="bg-black text-white px-4 py-2 rounded-xl text-sm font-medium hover:opacity-80 transition-opacity text-center w-full sm:w-auto block"
+            >
+              Edit
+            </a>
+            <a 
+              [routerLink]="['/invoices']" 
+              class="bg-red-700 text-white px-4 py-2 rounded-xl text-sm font-medium hover:opacity-80 transition-opacity text-center w-full sm:w-auto block"
+            >
+              Back
+            </a>
       </div>
     </div>
+    
   </div>
 }
