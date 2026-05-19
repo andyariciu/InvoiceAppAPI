@@ -101,7 +101,6 @@ export class InvoiceEdit implements OnInit {
       this.message = '';
       this.cdr.detectChanges();
 
-      // 3. Apelăm serviciul tău de facturi
       this.invoicesService.deleteInvoice(this.invoice.id).subscribe({
         next: () => {
           this.loading = false;
