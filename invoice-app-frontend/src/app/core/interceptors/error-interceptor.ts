@@ -2,72 +2,72 @@ import { HttpInterceptorFn, HttpErrorResponse } from '@angular/common/http';
 import { inject } from '@angular/core';
 import { Router } from '@angular/router';
 import { catchError, switchMap, throwError } from 'rxjs';
-import { Auth } from '../services/auth';
+import { Auth } from '../services/auth'; // Ajustează calea către serviciul tău de Auth
 
 export const errorInterceptor: HttpInterceptorFn = (req, next) => {
-
   const authService = inject(Auth);
   const router = inject(Router);
+  const token = localStorage.getItem('token');
 
-  return next(req).pipe(
+  // adding token in the header if it exists
+  let clonedReq = req;
+  if (token) {
+    clonedReq = req.clone({
+      setHeaders: {
+        Authorization: `Bearer ${token}`
+      }
+    });
+  }
 
+  // sending the request and tracking errors
+  return next(clonedReq).pipe(
     catchError((error: HttpErrorResponse) => {
 
-      // 401: Unauthorized
+      // ERROR 401: Unauthorised token expired
       if (error.status === 401) {
-
-        const refreshToken = localStorage.getItem('refreshToken');
-        const token = localStorage.getItem('token');
-
-        if (!refreshToken || !token) {
-
+        
+        // no token, redirect to login
+        if (!token) {
           router.navigate(['/login']);
           return throwError(() => error);
         }
 
-        // Trying to refresh token
-        return authService.refreshToken({
-          token: token,
-          refreshToken: refreshToken
-        }).pipe(
-
+        // Silent refresh
+        return authService.refreshToken().pipe(
           switchMap((res: any) => {
+            console.log('Token has been refreshed');
 
-            // save new token
+            // Save new token in json
             localStorage.setItem('token', res.token);
-            localStorage.setItem('refreshToken', res.refreshToken);
 
-            // remaking the original request
-            const clonedReq = req.clone({
+            // redo the user's request with new token
+            const retryReq = req.clone({
               setHeaders: {
                 Authorization: `Bearer ${res.token}`
               }
             });
 
-            return next(clonedReq);
+            // do the request again
+            return next(retryReq);
           }),
-
-          catchError(() => {
-
-            // if error fails, then logout
+          catchError((refreshError) => {
+            // forced logout if refresh fails
+            console.warn('Session unauthorised.');
             localStorage.removeItem('token');
-            localStorage.removeItem('refreshToken');
-
             router.navigate(['/login']);
-
-            return throwError(() => error);
+            return throwError(() => refreshError);
           })
         );
       }
 
-      // 403: Forbidden
+      // ERROR 403: Forbidden
       if (error.status === 403) {
-        alert('You do not have permission to access this resource.');
+        alert('Your access is forbidden.');
       }
 
-      // 500: Server error
+      // ERROR 500+: Server errors
       if (error.status >= 500) {
-        alert('Server error. Please try again later.');
+        alert('Server error. Try again later.');
       }
 
       return throwError(() => error);

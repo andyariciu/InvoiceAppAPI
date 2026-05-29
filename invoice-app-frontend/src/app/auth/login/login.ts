@@ -41,11 +41,9 @@ export class Login {
 
           console.log('LOGIN SUCCESS', response);
 
-          localStorage.setItem('token', response.token);
-          localStorage.setItem('refreshToken', response.refreshToken);
+          localStorage.setItem('token', response.token);;
 
           this.isLoading = false;
-
           this.router.navigate(['/invoices']);
         },
 
