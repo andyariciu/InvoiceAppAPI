@@ -1,6 +1,7 @@
 import { Component, inject, OnInit, ChangeDetectorRef  } from '@angular/core';
 import { Invoices } from '../../services/invoices';
-import { RouterLink } from '@angular/router';
+import { Router, RouterLink } from '@angular/router';
+import { Auth } from '../../../../core/services/auth';
 
 @Component({
   selector: 'app-invoice-list',
@@ -14,6 +15,8 @@ export class InvoiceList implements OnInit {
 
   private invoicesService = inject(Invoices);
   private cdr = inject(ChangeDetectorRef);
+  private authService = inject(Auth);
+  private router = inject(Router);
   invoices: any[] = [];
   searchString: string = '';
   error: string | null = null;
@@ -37,9 +40,9 @@ export class InvoiceList implements OnInit {
         this.cdr.detectChanges();
       },
       error: (err) => {
-        console.error('Eroare la încărcarea facturilor:', err);
+        console.error('Error when loading the invoices:', err);
         this.loading = false;
-        this.error = "Nu am putut încărca facturile de pe server.";
+        this.error = "Couldn't load invoices.";
         this.cdr.detectChanges();
       }
     });
@@ -48,5 +51,15 @@ export class InvoiceList implements OnInit {
   onApplyFilters(): void {
     this.loadInvoices();
   }
+onLogout(): void {
+    this.authService.logout().subscribe({
+      next: () => this.clearLocalSession(),
+      error: () => this.clearLocalSession() // Chiar dacă serverul dă vreo eroare, curățăm oricum sesiunea locală
+    });
+  }
 
+  private clearLocalSession(): void {
+    localStorage.removeItem('token'); // Ștergem JWT-ul
+    this.router.navigate(['/login']); // Îl trimitem la Login
+  }
 }

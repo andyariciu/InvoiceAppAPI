@@ -50,6 +50,7 @@ namespace InvoiceApp.Controllers
         [HttpPost("login")]
         public async Task<IActionResult> Login([FromBody] LoginRequest request)
         {
+       
             var user = await _db.Users.FirstOrDefaultAsync(x => x.Username == request.Username);
 
             if (user == null || !BCrypt.Net.BCrypt.Verify(request.Password, user.PasswordHash))
@@ -57,56 +58,87 @@ namespace InvoiceApp.Controllers
                 return Unauthorized(new { message = "Invalid credentials!" });
             }
 
-            //delete tokens older than 7 days
+            // Clean old tokens
             var threshold = DateTime.UtcNow.AddDays(-7);
-            var oldTokens = _db.RefreshTokens
-                .Where(t => t.UserId == user.Id && (t.IsRevoked || t.Expires < threshold));
+            var oldTokens = await _db.RefreshTokens
+                .Where(t => t.UserId == user.Id && (t.IsRevoked || t.Expires < threshold))
+                .ToListAsync(); // keep it in async memory
 
-            _db.RefreshTokens.RemoveRange(oldTokens);
-            //extract the IP from user's connection
-            var userIp = _httpContextAccessor.HttpContext?.Connection?.RemoteIpAddress?.ToString();
+            if (oldTokens.Any())
+            {
+                _db.RefreshTokens.RemoveRange(oldTokens);
+            }
 
-            //generate access token based on user and userip
+            // check IP
+            var userIp = _httpContextAccessor.HttpContext?.Connection?.RemoteIpAddress?.ToString() ?? "Unknown";
+
+            // generate tokens
             var accessToken = GenerateAccessToken(user, userIp);
             var refreshToken = GenerateRefreshTokenObject(user.Id);
-            //save the refreshToken in the DB
-            _db.RefreshTokens.Add(refreshToken);
 
+            _db.RefreshTokens.Add(refreshToken);
             await _db.SaveChangesAsync();
 
+            // cookie httponly for security purpose
+            var cookieOptions = new CookieOptions
+            {
+                HttpOnly = true,
+                Secure = true, //httpS only
+                SameSite = SameSiteMode.Strict,
+                Expires = refreshToken.Expires
+            };
+
+            Response.Cookies.Append("refreshToken", refreshToken.Token, cookieOptions);
+
+            // send only accesstoken in angular
             return Ok(new
             {
-                token = accessToken,
-                refreshToken = refreshToken.Token
+                token = accessToken
             });
         }
 
         [HttpPost("refresh")]
-        public async Task<IActionResult> Refresh([FromBody] RefreshRequest request)
+        public async Task<IActionResult> Refresh()
         {
-            var userIp = _httpContextAccessor.HttpContext?.Connection?.RemoteIpAddress?.ToString();
+            if (!Request.Cookies.TryGetValue("refreshToken", out var refreshTokenString))
+            {
+                return Unauthorized(new { message = "Refresh token missing from cookies!" });
+            }
+
+            var userIp = _httpContextAccessor.HttpContext?.Connection?.RemoteIpAddress?.ToString() ?? "Unknown";
+
             var storedToken = await _db.RefreshTokens
                 .Include(t => t.User)
-                .FirstOrDefaultAsync(t => t.Token == request.RefreshToken);
+                .FirstOrDefaultAsync(t => t.Token == refreshTokenString);
 
             if (storedToken == null || storedToken.IsRevoked || storedToken.Expires < DateTime.UtcNow)
             {
                 return Unauthorized(new { message = "Refresh token invalid or expired!" });
             }
 
-            //delete old token and generate new one
+            // rotate tokens - mark old one as revoked
             storedToken.IsRevoked = true;
 
+            // generate new tokens
             var newAccessToken = GenerateAccessToken(storedToken.User, userIp);
             var newRefreshToken = GenerateRefreshTokenObject(storedToken.UserId);
 
             _db.RefreshTokens.Add(newRefreshToken);
             await _db.SaveChangesAsync();
 
+            // replace cookie with new refresh token
+            var cookieOptions = new CookieOptions
+            {
+                HttpOnly = true,
+                Secure = true,
+                SameSite = SameSiteMode.Strict,
+                Expires = newRefreshToken.Expires
+            };
+            Response.Cookies.Append("refreshToken", newRefreshToken.Token, cookieOptions);
+
             return Ok(new
             {
-                token = newAccessToken,
-                refreshToken = newRefreshToken.Token
+                token = newAccessToken
             });
         }
 
@@ -183,6 +215,20 @@ namespace InvoiceApp.Controllers
 
                 await _next(context);
             }
+        }
+
+        [HttpPost("logout")]
+        public IActionResult Logout()
+        {
+            // delete cookie
+            Response.Cookies.Delete("refreshToken", new CookieOptions
+            {
+                HttpOnly = true,
+                Secure = true,
+                SameSite = SameSiteMode.Strict
+            });
+
+            return Ok(new { message = "Logged out successfully!" });
         }
 
         [Authorize]

@@ -129,7 +129,7 @@ namespace InvoiceApp.Controllers
             //if the invoice isn't found or the user doesn't have the rights, return N/A
             if (invoice == null)
             {
-                return NotFound(); // Rămânem discreți
+                return NotFound();
             }
 
             //delete the invoice if it gets to this point
