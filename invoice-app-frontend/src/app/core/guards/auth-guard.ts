@@ -6,7 +6,7 @@ export const authGuard: CanActivateFn = () => {
   const token = localStorage.getItem('token');
 
   //does token exist and have all the required parts
-  if (!token || token.split('.').length !== 4) {
+  if (!token || token.split('.').length !== 3) {
     return cleanUpAndRedirect(router);
   }
 

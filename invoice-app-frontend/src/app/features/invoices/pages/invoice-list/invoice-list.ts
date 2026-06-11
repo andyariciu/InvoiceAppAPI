@@ -13,6 +13,7 @@ import { Auth } from '../../../../core/services/auth';
 
 export class InvoiceList implements OnInit {
 
+  isUploadModalOpen = false;
   private invoicesService = inject(Invoices);
   private cdr = inject(ChangeDetectorRef);
   private authService = inject(Auth);
@@ -22,6 +23,8 @@ export class InvoiceList implements OnInit {
   error: string | null = null;
   minTotalFilter: number | null = null;
   loading = true;
+  selectedFile: File | null = null;
+  errors: any[] = [];
 
   ngOnInit(): void {
     //load all invoices when after page loads
@@ -51,15 +54,59 @@ export class InvoiceList implements OnInit {
   onApplyFilters(): void {
     this.loadInvoices();
   }
-onLogout(): void {
+
+  onLogout(): void {
     this.authService.logout().subscribe({
       next: () => this.clearLocalSession(),
-      error: () => this.clearLocalSession() // Chiar dacă serverul dă vreo eroare, curățăm oricum sesiunea locală
+      error: () => this.clearLocalSession()
     });
   }
 
   private clearLocalSession(): void {
-    localStorage.removeItem('token'); // Ștergem JWT-ul
-    this.router.navigate(['/login']); // Îl trimitem la Login
+    localStorage.removeItem('token');
+    this.router.navigate(['/login']);
   }
+
+ onFileSelected(event: any): void {
+  const file: File = event.target.files[0];
+  if (!file) return;
+
+  // check if it's excel file
+  if (file.name.split('.').pop() !== 'xlsx') {
+    alert('Only .xlsx (Excel) are allowed!');
+    return;
+  }
+
+  this.selectedFile = file;
+}
+
+onUpload(): void {
+  if (!this.selectedFile) {
+    alert('Please check a file first!');
+    return;
+  }
+
+  const cutieTransport = new FormData();
+  cutieTransport.append('file', this.selectedFile);
+
+  this.loading = false;
+  this.cdr.detectChanges();
+
+  this.invoicesService.uploadInvoices(cutieTransport).subscribe({
+    next: (res) => {
+      this.loading = false;
+      alert(`Success! You have uploaded ${res.inserted} invoices.`);
+      this.selectedFile = null; // reset input
+      this.isUploadModalOpen = false;
+      this.loadInvoices();      // reload table
+    },
+    error: (err) => {
+      this.loading = false;
+      this.cdr.detectChanges();
+      console.error(err);
+      alert('ERROR.');
+    }
+  });
+}
+
 }
