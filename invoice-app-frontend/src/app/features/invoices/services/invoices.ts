@@ -43,4 +43,9 @@ getInvoices(search?: string, minTotal?: number): Observable<any[]> {
   updateInvoice(id: number, dto: any) {
     return this.http.put(`${this.apiUrl}/${id}`, dto);
   }
+
+  uploadInvoices(formData: FormData): Observable<any> {
+    return this.http.post<any>(`${this.apiUrl}/upload-invoices`, formData);
+  }
+
 }

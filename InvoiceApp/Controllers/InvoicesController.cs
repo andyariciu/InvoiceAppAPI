@@ -4,7 +4,11 @@ using InvoiceApp.Models;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using System.Formats.Asn1;
+using System.Globalization;
 using System.Security.Claims;
+using ClosedXML.Excel;
+using DocumentFormat.OpenXml.Spreadsheet;
 
 namespace InvoiceApp.Controllers
 {
@@ -57,6 +61,139 @@ namespace InvoiceApp.Controllers
             await _db.SaveChangesAsync();
 
             return Ok(invoice);
+        }
+
+        [HttpPost("upload-invoices")]
+        [Consumes("multipart/form-data")]
+        public async Task<IActionResult> UploadInvoices([FromForm] InvoiceUploadDto model)
+        {
+            var file = model.File;
+            if (file == null || file.Length == 0)
+                return BadRequest("File is empty");
+            var userIdString = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (string.IsNullOrEmpty(userIdString)) return Unauthorized();
+
+            var userId = int.Parse(userIdString);
+
+            if (file == null || file.Length == 0)
+                return BadRequest("File is empty");
+
+            var extension = Path.GetExtension(file.FileName).ToLowerInvariant();
+
+            if (extension != ".xlsx")
+            {
+                return BadRequest("Only .xlsx files are allowed.");
+            }
+
+            const long maxFileSize = 5 * 1024 * 1024; // 5 MB
+
+            if (file.Length > maxFileSize)
+            {
+                return BadRequest("File is too large.");
+            }
+
+            var invoices = new List<Invoice>();
+            var errors = new List<ImportError>();
+
+            int nextNumber = 1;
+
+            var lastInvoice = await _db.Invoices
+                .OrderByDescending(x => x.Number)
+                .FirstOrDefaultAsync();
+
+            if (lastInvoice != null && int.TryParse(lastInvoice.Number, out int lastNum))
+                nextNumber = lastNum + 1;
+            try
+            {
+                using var stream = file.OpenReadStream();
+                using var workbook = new XLWorkbook(stream);
+                var worksheet = workbook.Worksheet(1);
+                var rows = worksheet.RangeUsed().RowsUsed().Skip(1); // skip header
+
+                int rowIndex = 1;
+
+                foreach (var row in rows)
+                {
+                    rowIndex++;
+
+                    string clientName = row.Cell(1).GetValue<string>()?.Trim();
+                    string totalRaw = row.Cell(2).GetValue<string>()?.Trim();
+
+                    bool isValidRow = true;
+
+                    // clientname check
+                    if (string.IsNullOrWhiteSpace(clientName))
+                    {
+                        errors.Add(new ImportError
+                        {
+                            Row = rowIndex,
+                            Column = "ClientName",
+                            Error = "ClientName is required"
+                        });
+                        isValidRow = false;
+                    }
+
+                    // check
+                    decimal total = 0;
+                    if (string.IsNullOrWhiteSpace(totalRaw) || !decimal.TryParse(totalRaw, out total))
+                    {
+                        errors.Add(new ImportError
+                        {
+                            Row = rowIndex,
+                            Column = "Total",
+                            Error = "Total must be a valid number"
+                        });
+                        isValidRow = false;
+                    }
+                    else if (total <= 0)
+                    {
+                        errors.Add(new ImportError
+                        {
+                            Row = rowIndex,
+                            Column = "Total",
+                            Error = "Total must be greater than 0"
+                        });
+                        isValidRow = false;
+                    }
+
+                    // if errors on the row, skip it
+                    if (!isValidRow)
+                        continue;
+
+                    invoices.Add(new Invoice
+                    {
+                        Number = nextNumber.ToString(),
+                        ClientName = clientName,
+                        Total = total,
+                        UserId = userId,
+                        CreatedAt = DateTime.UtcNow
+                    });
+
+                    nextNumber++;
+                }
+
+                // if there are errors, don't save
+                if (errors.Any())
+                {
+                    return BadRequest(new
+                    {
+                        message = "Validation errors found",
+                        errors
+                    });
+                }
+
+                _db.Invoices.AddRange(invoices);
+                await _db.SaveChangesAsync();
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(ex.Message);
+            }
+
+            return Ok(new
+            {
+                inserted = invoices.Count
+            });
         }
 
         [HttpGet]
